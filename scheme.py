@@ -22,13 +22,16 @@ def scheme_eval(expr, env):
     if expr is None:
         raise SchemeError("Cannot evaluate an undefined expression.")
 
-    # Evaluate Atoms
+    #***Evaluate Atoms***
+    #Searches for the expression in the environment
     if scheme_symbolp(expr):
         return env.lookup(expr)
+    #If it's anything but a symbol already categorized, then return the expression
     elif scheme_atomp(expr) or scheme_stringp(expr) or expr is okay:
         return expr
 
-    # All non-atomic expressions are lists.
+    #***All non-atomic expressions are lists***
+    #
     if not scheme_listp(expr):
         raise SchemeError("malformed list: {0}".format(str(expr)))
     first, rest = expr.first, expr.second
@@ -39,8 +42,6 @@ def scheme_eval(expr, env):
         return scheme_eval(LOGIC_FORMS[first](rest, env), env)
     elif first == "lambda":
         return do_lambda_form(rest, env)
-    elif first == "mu":
-        return do_mu_form(rest)
     elif first == "define":
         return do_define_form(rest, env)
     elif first == "quote":
@@ -55,13 +56,12 @@ def scheme_eval(expr, env):
 
 
 def scheme_apply(procedure, args, env):
+    """ARGS = """
     """Apply Scheme PROCEDURE to argument values ARGS in environment ENV."""
     if isinstance(procedure, PrimitiveProcedure):
         return apply_primitive(procedure, args, env)
     elif isinstance(procedure, LambdaProcedure):
-        "*** YOUR CODE HERE ***"
-    elif isinstance(procedure, MuProcedure):
-        "*** YOUR CODE HERE ***"
+        return do_lambda_form(args, env)
     else:
         raise SchemeError("Cannot call {0}".format(str(procedure)))
 
@@ -72,15 +72,21 @@ def apply_primitive(procedure, args, env):
     >>> plus = env.bindings["+"]
     >>> twos = Pair(2, Pair(2, nil))
     >>> apply_primitive(plus, twos, env)
-    4
     """
-    "*** YOUR CODE HERE ***"
 
+
+
+    
 ################
 # Environments #
 ################
 
 class Frame:
+    """
+        self.bindings is the set of all expressions in the frame
+        self.parent is the PARENT frame
+        
+    """
     """An environment frame binds Scheme symbols to Scheme values."""
 
     def __init__(self, parent):
@@ -97,7 +103,10 @@ class Frame:
 
     def lookup(self, symbol):
         """Return the value bound to SYMBOL.  Errors if SYMBOL is not found."""
-        "*** YOUR CODE HERE ***"
+        if symbol in self.bindings:
+            return self.bindings[symbol]
+        elif self.parent:
+            return Frame.lookup(self.parent, symbol)
         raise SchemeError("unknown identifier: {0}".format(str(symbol)))
 
 
@@ -147,33 +156,6 @@ class LambdaProcedure:
         args = (self.formals, self.body, self.env)
         return "LambdaProcedure({0}, {1}, {2})".format(*(repr(a) for a in args))
 
-class MuProcedure:
-    """A procedure defined by a mu expression, which has dynamic scope.
-     _________________
-    < Scheme is cool! >
-     -----------------
-            \   ^__^
-             \  (oo)\_______
-                (__)\       )\/\
-                    ||----w |
-                    ||     ||
-    """
-
-    def __init__(self, formals, body):
-        """A procedure whose formal parameter list is FORMALS (a Scheme list),
-        whose body is the single Scheme expression BODY.  A mu expression
-        containing multiple expressions, such as (mu (x) (display x) (+ x 1))
-        can be handled by using (begin (display x) (+ x 1)) as the body."""
-        self.formals = formals
-        self.body = body
-
-    def __str__(self):
-        return "(mu {0} {1})".format(str(self.formals), str(self.body))
-
-    def __repr__(self):
-        args = (self.formals, self.body)
-        return "MuProcedure({0}, {1})".format(*(repr(a) for a in args))
-
 
 #################
 # Special forms #
@@ -184,14 +166,7 @@ def do_lambda_form(vals, env):
     check_form(vals, 2)
     formals = vals[0]
     check_formals(formals)
-    "*** YOUR CODE HERE ***"
 
-def do_mu_form(vals):
-    """Evaluate a mu form with parameters VALS."""
-    check_form(vals, 2)
-    formals = vals[0]
-    check_formals(formals)
-    "*** YOUR CODE HERE ***"
 
 def do_define_form(vals, env):
     """Evaluate a define form with parameters VALS in environment ENV."""
@@ -339,8 +314,6 @@ def scheme_optimized_eval(expr, env):
             "*** YOUR CODE HERE ***"
         elif first == "lambda":
             return do_lambda_form(rest, env)
-        elif first == "mu":
-            return do_mu_form(rest)
         elif first == "define":
             return do_define_form(rest, env)
         elif first == "quote":
