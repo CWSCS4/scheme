@@ -60,8 +60,6 @@ def scheme_apply(procedure, args, env):
         return apply_primitive(procedure, args, env)
     elif isinstance(procedure, LambdaProcedure):
         "*** YOUR CODE HERE ***"
-    elif isinstance(procedure, MuProcedure):
-        "*** YOUR CODE HERE ***"
     else:
         raise SchemeError("Cannot call {0}".format(str(procedure)))
 
@@ -74,7 +72,15 @@ def apply_primitive(procedure, args, env):
     >>> apply_primitive(plus, twos, env)
     4
     """
-    "*** YOUR CODE HERE ***"
+    arg_list = list(args)
+
+    if (procedure.use_env):
+        arg_list.append(env)
+
+    try:
+        return procedure.fn(*arg_list)
+    except TypeError as e:
+        raise SchemeError(e)
 
 ################
 # Environments #
@@ -97,8 +103,12 @@ class Frame:
 
     def lookup(self, symbol):
         """Return the value bound to SYMBOL.  Errors if SYMBOL is not found."""
-        "*** YOUR CODE HERE ***"
-        raise SchemeError("unknown identifier: {0}".format(str(symbol)))
+        if symbol in self.bindings:
+            return self.bindings[symbol]
+        elif self.parent is not None:
+            return self.parent.lookup(symbol)
+        else:
+            raise SchemeError("unknown identifier: {0}".format(str(symbol)))
 
 
     def global_frame(self):
@@ -311,49 +321,6 @@ def check_formals(formals):
     >>> check_formals(read_line("(a b c)"))
     """
     "*** YOUR CODE HERE ***"
-
-##################
-# Tail Recursion #
-##################
-
-def scheme_optimized_eval(expr, env):
-    """Evaluate Scheme expression EXPR in environment ENV."""
-    while True:
-        if expr is None:
-            raise SchemeError("Cannot evaluate an undefined expression.")
-
-        # Evaluate Atoms
-        if scheme_symbolp(expr):
-            return env.lookup(expr)
-        elif scheme_atomp(expr) or scheme_stringp(expr) or expr is okay:
-            return expr
-
-        # All non-atomic expressions are lists.
-        if not scheme_listp(expr):
-            raise SchemeError("malformed list: {0}".format(str(expr)))
-        first, rest = expr.first, expr.second
-
-        # Evaluate Combinations
-        if (scheme_symbolp(first) # first might be unhashable
-            and first in LOGIC_FORMS):
-            "*** YOUR CODE HERE ***"
-        elif first == "lambda":
-            return do_lambda_form(rest, env)
-        elif first == "mu":
-            return do_mu_form(rest)
-        elif first == "define":
-            return do_define_form(rest, env)
-        elif first == "quote":
-            return do_quote_form(rest)
-        elif first == "let":
-            "*** YOUR CODE HERE ***"
-        else:
-            "*** YOUR CODE HERE ***"
-
-################################################################
-# Uncomment the following line to apply tail call optimization #
-################################################################
-# scheme_eval = scheme_optimized_eval
 
 
 ################

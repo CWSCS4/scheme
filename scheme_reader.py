@@ -129,7 +129,6 @@ def scheme_read(src):
     if src.current() is None:
         raise EOFError
     val = src.pop()
-    
     if val == "nil":
         return nil
     elif val not in DELIMITERS:
@@ -138,8 +137,6 @@ def scheme_read(src):
         return Pair('quote', Pair(scheme_read(src), nil))
     elif val == "(":
         return read_tail(src)
-    elif val == ")":
-        raise SyntaxError("expected one element after .")
     else:
         raise SyntaxError("unexpected token: {0}".format(val))
 
@@ -166,18 +163,18 @@ def read_tail(src):
     try:
         if src.current() is None:
             raise SyntaxError("unexpected end of file")
-        if src.current() == '.':
-            src.pop()
-            val = src.pop()
-            if src.pop() == ')':
-                return val
-            else:
-                return scheme_read(src)
 
         if src.current() == ")":
             src.pop()
             return nil
-
+        if src.current() == ".":
+            src.pop()
+            first = scheme_read(src)
+            rest = read_tail(src)
+            if rest is nil:
+                return first
+            raise SyntaxError("expected one element after .")
+        
         first = scheme_read(src)
         rest = read_tail(src)
         return Pair(first, rest)
