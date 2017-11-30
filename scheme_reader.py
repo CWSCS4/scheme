@@ -1,16 +1,13 @@
 """This module implements the built-in data types of the Scheme language, along
 with a parser for Scheme expressions.
-
 In addition to the types defined in this file, some data types in Scheme are
 represented by their corresponding type in Python:
     number:       int or float
     symbol:       string
     boolean:      bool
     unspecified:  None
-
 The __repr__ method of a Scheme value will return a Python expression that
 would be evaluated to the value, where possible.
-
 The __str__ method of a Scheme value will return a Scheme expression that
 would be read to the value, where possible.
 """
@@ -25,7 +22,6 @@ class Pair:
     """A pair has two instance attributes: first and second.  For a Pair to be
     a well-formed list, second is either a well-formed list or nil.  Some
     methods only apply to well-formed lists.
-
     >>> s = Pair(1, Pair(2, nil))
     >>> s
     Pair(1, Pair(2, nil))
@@ -116,7 +112,6 @@ nil = nil() # Assignment hides the nil class; there is only one instance
 
 def scheme_read(src):
     """Read the next expression from SRC, a Buffer of tokens.
-
     >>> lines = ["(+ 1 ", "(+ 23 4)) ("]
     >>> src = Buffer(tokenize_lines(lines))
     >>> print(scheme_read(src))
@@ -134,7 +129,7 @@ def scheme_read(src):
     elif val not in DELIMITERS:
         return val
     elif val == "'":
-        "*** YOUR CODE HERE ***"
+		return Pair('quote', Pair(scheme_read(src), nil))
     elif val == "(":
         return read_tail(src)
     else:
@@ -142,7 +137,6 @@ def scheme_read(src):
 
 def read_tail(src):
     """Return the remainder of a list in SRC, starting before an element or ).
-
     >>> read_tail(Buffer(tokenize_lines([")"])))
     nil
     >>> read_tail(Buffer(tokenize_lines(["2 3)"])))
@@ -163,13 +157,20 @@ def read_tail(src):
     try:
         if src.current() is None:
             raise SyntaxError("unexpected end of file")
-        if src.current() == ")":
+        elif src.current() == ")":
             src.pop()
             return nil
-        "*** YOUR CODE HERE ***"
-        first = scheme_read(src)
-        rest = read_tail(src)
-        return Pair(first, rest)
+        elif src.current() == ".":
+			src.pop()
+			first = scheme_read(src)
+			rest = read_tail(src)
+			if rest != nil:
+				raise SyntaxError("unexpected end of file")
+			return first
+		else:
+			first = scheme_read(src)
+			rest = read_tail(src)
+			return Pair(first, rest)
     except EOFError:
         raise SyntaxError("unexpected end of file")
 
@@ -205,4 +206,4 @@ def read_print_loop():
         except (SyntaxError, ValueError) as err:
             print(type(err).__name__ + ":", err)
         except (KeyboardInterrupt, EOFError):  # <Control>-D, etc.
-            return
+            return-
