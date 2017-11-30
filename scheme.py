@@ -200,7 +200,13 @@ def do_let_form(vals, env):
 
     # Add a frame containing bindings
     names, values = nil, nil
-    "*** YOUR CODE HERE ***"
+    for binding in bindings:
+		if len(binding) > 2
+			raise SchemeError("too many values in binding")
+		if not scheme_symbolp(binding[0]):
+			raise SchemeError("binding name not a symbol")
+		names = Pair(binding[0], names)
+		values = Pair(scheme_eval(binding[1], env), values)
     new_env = env.make_call_frame(names, values)
 
     # Evaluate all but the last expression after bindings, and return the last
@@ -218,16 +224,22 @@ def do_if_form(vals, env):
     """Evaluate if form with parameters VALS in environment ENV."""
     check_form(vals, 2, 3)
 	test = scheme_eval(vals[0], env)
-	if scheme_true(test):
-		return vals[1]
-	else:
-		if len(vals) == 3:
-			return vals[2]
-		return 
+	if scheme_true(scheme_eval(vals.first, env)):
+		return scheme_eval(vals.second.first, env)
+	elif len(vals) == 3:
+		return sceme_eval(vals.second.second.first, env)
 
 def do_and_form(vals, env):
     """Evaluate short-circuited and with parameters VALS in environment ENV."""
-    "*** YOUR CODE HERE ***"
+	if expressions == nil:
+		return True
+	else:
+		eval = scheme_eval(vals.first, env)
+		if scheme_true(eval):
+			if vals.second == nil:
+				return eval
+			return do_and_form(vals.second, env)
+		return eval
 
 def quote(value):
     """Return a Scheme expression quoting the Scheme VALUE.
@@ -241,7 +253,13 @@ def quote(value):
 
 def do_or_form(vals, env):
     """Evaluate short-circuited or with parameters VALS in environment ENV."""
-    "*** YOUR CODE HERE ***"
+	if len(vals) == 0:
+		return False
+	for param in vals:
+		val = scheme_eval(param, env)
+		if scheme_true(val):
+			return quote(val)
+	return False
 
 def do_cond_form(vals, env):
     """Evaluate cond form with parameters VALS in environment ENV."""
@@ -257,7 +275,11 @@ def do_cond_form(vals, env):
         else:
             test = scheme_eval(clause.first, env)
         if scheme_true(test):
-            "*** YOUR CODE HERE ***"
+			if clause.second == nil:
+				return test
+			if len(clause.second) > 1:
+				return do_begin_form(clause.second, env)
+			return clause.second.first
     return okay
 
 def do_begin_form(vals, env):
@@ -325,7 +347,7 @@ def scheme_optimized_eval(expr, env):
         # Evaluate Combinations
         if (scheme_symbolp(first) # first might be unhashable
             and first in LOGIC_FORMS):
-            "*** YOUR CODE HERE ***"
+            return scheme_eval(LOGIC_FORMS[first](rest, env), env)
         elif first == "lambda":
             return do_lambda_form(rest, env)
         elif first == "define":
@@ -333,9 +355,12 @@ def scheme_optimized_eval(expr, env):
         elif first == "quote":
             return do_quote_form(rest)
         elif first == "let":
-            "*** YOUR CODE HERE ***"
+			expr, env = do_let_form(rest, env)
+			return scheme_eval(expr, env)
         else:
-            "*** YOUR CODE HERE ***"
+			procedure = scheme_eval(first, env)
+			args = rest.map(lambda operand: scheme_eval(operand, env))
+			return scheme_apply(procedure, args, env)
 
 ################################################################
 # Uncomment the following line to apply tail call optimization #
