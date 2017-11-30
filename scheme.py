@@ -12,7 +12,6 @@ from ucb import main, trace
 
 def scheme_eval(expr, env):
     """Evaluate Scheme expression EXPR in environment ENV.
-
     >>> expr = read_line("(+ 2 2)")
     >>> expr
     Pair('+', Pair(2, Pair(2, nil)))
@@ -22,16 +21,13 @@ def scheme_eval(expr, env):
     if expr is None:
         raise SchemeError("Cannot evaluate an undefined expression.")
 
-    #***Evaluate Atoms***
-    #Searches for the expression in the environment
+    # Evaluate Atoms
     if scheme_symbolp(expr):
         return env.lookup(expr)
-    #If it's anything but a symbol already categorized, then return the expression
     elif scheme_atomp(expr) or scheme_stringp(expr) or expr is okay:
         return expr
 
-    #***All non-atomic expressions are lists***
-    #
+    # All non-atomic expressions are lists.
     if not scheme_listp(expr):
         raise SchemeError("malformed list: {0}".format(str(expr)))
     first, rest = expr.first, expr.second
@@ -56,37 +52,35 @@ def scheme_eval(expr, env):
 
 
 def scheme_apply(procedure, args, env):
-    """ARGS = """
     """Apply Scheme PROCEDURE to argument values ARGS in environment ENV."""
     if isinstance(procedure, PrimitiveProcedure):
         return apply_primitive(procedure, args, env)
     elif isinstance(procedure, LambdaProcedure):
-        return do_lambda_form(args, env)
+        new_frame = procedure.env.make_call_frame(procedure.formals, args)
+		return scheme_eval(procedure.body, new_frame)
     else:
         raise SchemeError("Cannot call {0}".format(str(procedure)))
 
 def apply_primitive(procedure, args, env):
     """Apply PrimitiveProcedure PROCEDURE to a Scheme list of ARGS in ENV.
-
     >>> env = create_global_frame()
     >>> plus = env.bindings["+"]
     >>> twos = Pair(2, Pair(2, nil))
     >>> apply_primitive(plus, twos, env)
+    4
     """
+	list_args = list(args)
+	if procedure.use_env:
+		list_args.append(env)
+	try:
+		return procedure.fn(*list_args)
+	except TypeError: raise SchemeError()
 
-
-
-    
 ################
 # Environments #
 ################
 
 class Frame:
-    """
-        self.bindings is the set of all expressions in the frame
-        self.parent is the PARENT frame
-        
-    """
     """An environment frame binds Scheme symbols to Scheme values."""
 
     def __init__(self, parent):
@@ -103,10 +97,10 @@ class Frame:
 
     def lookup(self, symbol):
         """Return the value bound to SYMBOL.  Errors if SYMBOL is not found."""
-        if symbol in self.bindings:
-            return self.bindings[symbol]
-        elif self.parent:
-            return Frame.lookup(self.parent, symbol)
+		if symbol in self.bindings:
+			return self.bindings[symbol]
+		elif self.parent:
+			return Frame.lookup(self.parent, symbol)
         raise SchemeError("unknown identifier: {0}".format(str(symbol)))
 
 
@@ -122,14 +116,19 @@ class Frame:
         in the Scheme formal parameter list FORMALS are bound to the Scheme
         values in the Scheme value list VALS. Raise an error if too many or too
         few arguments are given.
-
         >>> env = create_global_frame()
         >>> formals, vals = read_line("(a b c)"), read_line("(1 2 3)")
         >>> env.make_call_frame(formals, vals)
         <{a: 1, b: 2, c: 3} -> <Global Frame>>
         """
         frame = Frame(self)
-        "*** YOUR CODE HERE ***"
+		if len(formals) != len(vals):
+			return SchemeError
+		i = 0
+		while i != len(vals):
+			frame.define(formals.first, vals.first)
+			formals = formals.second
+			vals = vals.second
         return frame
 
     def define(self, sym, val):
@@ -166,7 +165,9 @@ def do_lambda_form(vals, env):
     check_form(vals, 2)
     formals = vals[0]
     check_formals(formals)
-
+	if len(vals) > 2:
+		return LambdaProcedure(formals, Pair('begin', vals.second), env)
+	return LambdaProcedure(formals, vals[1], env)
 
 def do_define_form(vals, env):
     """Evaluate a define form with parameters VALS in environment ENV."""
@@ -174,16 +175,19 @@ def do_define_form(vals, env):
     target = vals[0]
     if scheme_symbolp(target):
         check_form(vals, 2, 2)
-        "*** YOUR CODE HERE ***"
+		env.bindings[target] = scheme_eval(vals[1], env)
+		return target
     elif isinstance(target, Pair):
-        "*** YOUR CODE HERE ***"
+        vals = Pair(taget.second, vals.second)
+		env.bindings[target.first] = do_lambda_form(vals, env)
+		return target.first
     else:
         raise SchemeError("bad argument to define")
 
 def do_quote_form(vals):
     """Evaluate a quote form with parameters VALS."""
     check_form(vals, 1, 1)
-    "*** YOUR CODE HERE ***"
+	return vals.first
 
 
 def do_let_form(vals, env):
@@ -213,7 +217,13 @@ def do_let_form(vals, env):
 def do_if_form(vals, env):
     """Evaluate if form with parameters VALS in environment ENV."""
     check_form(vals, 2, 3)
-    "*** YOUR CODE HERE ***"
+	test = scheme_eval(vals[0], env)
+	if scheme_true(test):
+		return vals[1]
+	else:
+		if len(vals) == 3:
+			return vals[2]
+		return 
 
 def do_and_form(vals, env):
     """Evaluate short-circuited and with parameters VALS in environment ENV."""
@@ -221,7 +231,6 @@ def do_and_form(vals, env):
 
 def quote(value):
     """Return a Scheme expression quoting the Scheme VALUE.
-
     >>> s = quote('hello')
     >>> print(s)
     (quote hello)
@@ -254,7 +263,9 @@ def do_cond_form(vals, env):
 def do_begin_form(vals, env):
     """Evaluate begin form with parameters VALS in environment ENV."""
     check_form(vals, 1)
-    "*** YOUR CODE HERE ***"
+	for i in range(len(vals)-1):
+		scheme_eval(vals[i], env)
+	return vals[len(vals)-1]
 
 LOGIC_FORMS = {
         "and": do_and_form,
@@ -282,10 +293,13 @@ def check_formals(formals):
     """Check that FORMALS is a valid parameter list, a Scheme list of symbols
     in which each symbol is distinct. Raise a SchemeError if the list of formals
     is not a well-formed list of symbols or if any symbol is repeated.
-
     >>> check_formals(read_line("(a b c)"))
     """
-    "*** YOUR CODE HERE ***"
+	distinct_symbols = []
+	for param in formals:
+		if param in distinct_symbols or not scheme_symbolp(param):
+			raise SchemeError
+		distinct_symbols.append(param)
 
 ##################
 # Tail Recursion #
