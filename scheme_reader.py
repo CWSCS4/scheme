@@ -129,7 +129,7 @@ def scheme_read(src):
     elif val not in DELIMITERS:
         return val
     elif val == "'":
-		return Pair('quote', Pair(scheme_read(src), nil))
+        return Pair('quote', Pair(scheme_read(src), nil))
     elif val == "(":
         return read_tail(src)
     else:
@@ -161,16 +161,16 @@ def read_tail(src):
             src.pop()
             return nil
         elif src.current() == ".":
-			src.pop()
-			first = scheme_read(src)
-			rest = read_tail(src)
-			if rest != nil:
-				raise SyntaxError("unexpected end of file")
-			return first
-		else:
-			first = scheme_read(src)
-			rest = read_tail(src)
-			return Pair(first, rest)
+            src.pop()
+            first = scheme_read(src)
+            rest = read_tail(src)
+            if rest != nil:
+                raise SyntaxError("unexpected end of file")
+            return first
+        else:
+            first = scheme_read(src)
+            rest = read_tail(src)
+            return Pair(first, rest)
     except EOFError:
         raise SyntaxError("unexpected end of file")
 
