@@ -206,4 +206,4 @@ def read_print_loop():
         except (SyntaxError, ValueError) as err:
             print(type(err).__name__ + ":", err)
         except (KeyboardInterrupt, EOFError):  # <Control>-D, etc.
-            return-
+            return
