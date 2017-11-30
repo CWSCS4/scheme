@@ -91,8 +91,8 @@ class Frame:
         if self.parent is None:
             return "<Global Frame>"
         else:
-            sorted = sorted('{0}: {1}'.format(k,v) for k,v in self.bindings.items())
-            return "<{{{0}}} -> {1}>".format(', '.join(sorted), repr(self.parent))
+            sort = sorted('{0}: {1}'.format(k,v) for k,v in self.bindings.items())
+            return "<{{{0}}} -> {1}>".format(', '.join(sort), repr(self.parent))
 
     def lookup(self, symbol):
         """Return the value bound to SYMBOL.  Errors if SYMBOL is not found."""
