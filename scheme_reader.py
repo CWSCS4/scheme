@@ -134,7 +134,8 @@ def scheme_read(src):
     elif val not in DELIMITERS:
         return val
     elif val == "'":
-        "*** YOUR CODE HERE ***"
+        # just read from input, creating quote pair
+        return Pair('quote', Pair(scheme_read(src), nil))
     elif val == "(":
         return read_tail(src)
     else:
@@ -163,10 +164,21 @@ def read_tail(src):
     try:
         if src.current() is None:
             raise SyntaxError("unexpected end of file")
+
         if src.current() == ")":
             src.pop()
             return nil
-        "*** YOUR CODE HERE ***"
+        if src.current() == ".":
+            # pass the dot
+            src.pop()
+
+            # find values for returning + handle malformed list
+            first = scheme_read(src)
+            rest = read_tail(src)
+            if rest is nil:
+                return first
+            raise SyntaxError("expected one element after .")
+        
         first = scheme_read(src)
         rest = read_tail(src)
         return Pair(first, rest)
