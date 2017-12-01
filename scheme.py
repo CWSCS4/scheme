@@ -56,7 +56,8 @@ def scheme_apply(procedure, args, env):
     if isinstance(procedure, PrimitiveProcedure):
         return apply_primitive(procedure, args, env)
     elif isinstance(procedure, LambdaProcedure):
-        return apply_lambda(procedure, args, env)
+        lambda_frame = procedure.env.make_call_frame(procedure.formals, args)
+        return scheme_eval(procedure.body, lambda_frame)
     else:
         raise SchemeError("Cannot call {0}".format(str(procedure)))
 
@@ -79,9 +80,6 @@ def apply_primitive(procedure, args, env):
         return procedure.fn(*list_args)
     except TypeError:
         raise SchemeError()
-
-def apply_lambda(procedure, args, env):
-    lambda_frame = env.make_call_frame(env, , )
 
 ################
 # Environments #
@@ -231,10 +229,12 @@ def do_if_form(vals, env):
     """Evaluate if form with parameters VALS in environment ENV."""
     check_form(vals, 2, 3)
     test = scheme_eval(vals[0], env)
-    if scheme_true(scheme_eval(vals.first, env)):
-        return scheme_eval(vals.second.first, env)
-    elif len(vals) == 3:
-        return scheme_eval(vals.second.second.first, env)
+    if scheme_true(test):
+        return vals[1]
+    else:
+        if len(vals) == 3:
+            return vals[2]
+        return okay
 
 def do_and_form(vals, env):
     """Evaluate short-circuited and with parameters VALS in environment ENV."""
