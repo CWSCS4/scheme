@@ -56,7 +56,7 @@ def scheme_apply(procedure, args, env):
     if isinstance(procedure, PrimitiveProcedure):
         return apply_primitive(procedure, args, env)
     elif isinstance(procedure, LambdaProcedure):
-        return do_lambda_form(args, env)
+        return apply_lambda(procedure, args, env)
     else:
         raise SchemeError("Cannot call {0}".format(str(procedure)))
 
@@ -70,10 +70,18 @@ def apply_primitive(procedure, args, env):
     """
     list_args = []
     i = 0
-    while i < len(args-1): list_args.append(args[i])
-    if procedure.use_env: list_args.append(env)
-    try: return procedure.fn(*list_args)
-    except TypeError: raise SchemeError()
+    while i < len(args):
+        list_args.append(args[i])
+        i += 1
+    if procedure.use_env:
+        list_args.append(env)
+    try:
+        return procedure.fn(*list_args)
+    except TypeError:
+        raise SchemeError()
+
+def apply_lambda(procedure, args, env):
+    lambda_frame = env.make_call_frame(env, , )
 
 ################
 # Environments #
@@ -176,7 +184,7 @@ def do_define_form(vals, env):
         check_form(vals, 2, 2)
         env.bindings[target] = scheme_eval(vals[1], env)
         return target
-    elif isinstance(target, Pair):
+    elif isinstance(target, Pair) and scheme_symbolp(target[0]):
         vals = Pair(target.second, vals.second)
         env.bindings[target.first] = do_lambda_form(vals, env)
         return target.first
