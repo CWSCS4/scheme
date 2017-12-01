@@ -134,6 +134,7 @@ def scheme_read(src):
     elif val not in DELIMITERS:
         return val
     elif val == "'":
+        # just read from input, creating quote pair
         return Pair('quote', Pair(scheme_read(src), nil))
     elif val == "(":
         return read_tail(src)
@@ -168,7 +169,10 @@ def read_tail(src):
             src.pop()
             return nil
         if src.current() == ".":
+            # pass the dot
             src.pop()
+
+            # find values for returning + handle malformed list
             first = scheme_read(src)
             rest = read_tail(src)
             if rest is nil:
